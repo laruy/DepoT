@@ -7,9 +7,15 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  ADMIN
+enum MembershipRole {
+  OWNER
   MEMBER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
 }
 
 enum Priority {
@@ -19,13 +25,39 @@ enum Priority {
 }
 
 model Workspace {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  users    User[]
-  invites  Invite[]
-  features Feature[]
+  ownerId String
+  owner   User   @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+
+  memberships Membership[]
+  invites     Invite[]
+  features    Feature[]
+
+  @@index([ownerId])
+  @@map("workspaces")
+}
+
+model Membership {
+  id       String         @id @default(cuid())
+  role     MembershipRole @default(MEMBER)
+  joinedAt DateTime       @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // um usuário só tem 1 membership por workspace
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("memberships")
 }
 
 model Account {
@@ -41,7 +73,9 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
   @@map("accounts")
 }
@@ -51,7 +85,9 @@ model Session {
   sessionToken String   @unique @map("session_token")
   userId       String   @map("user_id")
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("sessions")
 }
 
@@ -61,15 +97,15 @@ model User {
   email         String?   @unique
   emailVerified DateTime? @map("email_verified")
   image         String?
-  accounts      Account[]
-  sessions      Session[]
-  role         Role     @default(MEMBER)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  workspaceId String?
-  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  accounts Account[]
+  sessions Session[]
+
+  ownedWorkspaces Workspace[]  @relation("WorkspaceOwner")
+  memberships     Membership[]
 
   testCasesCreated TestCase[] @relation("CreatedBy")
   invitesSent      Invite[]   @relation("InvitedBy")
@@ -81,17 +117,17 @@ model VerificationToken {
   identifier String
   token      String
   expires    DateTime
+
   @@unique([identifier, token])
   @@map("verification_tokens")
 }
 
 model Invite {
-  id        String    @id @default(cuid())
-  token     String    @unique
+  id        String       @id @default(cuid())
   email     String
-  used      Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  expiresAt DateTime?
+  status    InviteStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  respondedAt DateTime?
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -100,6 +136,8 @@ model Invite {
   invitedBy   User?   @relation("InvitedBy", fields: [invitedById], references: [id])
 
   @@index([email])
+  @@index([workspaceId])
+  @@map("invites")
 }
 
 model Feature {
@@ -107,7 +145,7 @@ model Feature {
   name        String
   description String?
   color       String   @default("#A78BFA")
-  maestroTags String? // tags maestro associadas a esta feature, separadas por vírgula
+  maestroTags String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -124,12 +162,12 @@ model TestCase {
   id              String   @id @default(cuid())
   title           String
   description     String?
-  steps           String? // passo a passo, texto livre (uma linha por passo)
+  steps           String?
   expectedResult  String?
   priority        Priority @default(MEDIUM)
   isAutomated     Boolean  @default(false)
-  automationTags  String? // tags maestro específicas deste caso (opcional, além das da feature)
-  automationNotes String? // observações específicas sobre a automação deste caso
+  automationTags  String?
+  automationNotes String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -143,9 +181,9 @@ model TestCase {
 }
 
 model AutomationDoc {
-  id          String   @id @default(cuid())
-  content     String   @default("") // markdown: como a automação desta feature funciona
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  content   String   @default("")
+  updatedAt DateTime @updatedAt
 
   featureId String  @unique
   feature   Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
