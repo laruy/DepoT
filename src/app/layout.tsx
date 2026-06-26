@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import "./globals.css"
+import { fraunces, inter, plexMono } from "./fonts";
 
 export const metadata: Metadata = {
   title: "my-app",
@@ -12,8 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-BR" className={`${fraunces.variable} ${inter.variable} ${plexMono.variable}`}>
       <body>{children}</body>
     </html>
   );
 }
+

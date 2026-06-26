@@ -1,18 +1,17 @@
-import { SignIn } from "@/src/Components/auth-components";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { LoginVisual } from "@/src/Components/login/LoginVisual";
+import { SignInCard } from "@/src/Components/login/SignInCard";
 
-    const Page = async () => {
+const Page = async () => {
     const session = await auth();
     if (session) redirect("/dashboard");
 
     return (
-        <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="bg-neutral-800 rounded-lg p-6 max-w-xl w-full">
-            <h1 className="text-white text-xl mb-4 text-center">QA Hub</h1>
-            <div className="text-center">
-            <SignIn provider="Google" />
-            </div>
+        <div className="grid min-h-screen bg-[var(--bg)] lg:grid-cols-[1fr_440px]">
+        <LoginVisual />
+        <div className="flex items-center justify-center border-t border-[var(--rule)] p-6 lg:border-t-0 lg:border-l">
+            <SignInCard />
         </div>
         </div>
     );
