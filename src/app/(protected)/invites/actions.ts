@@ -1,8 +1,8 @@
-// src/app/invites/actions.ts
 "use server";
 import { auth } from "@/auth";
 import prisma from "@/src/lib/prisma";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 export async function respondInvite(inviteId: string, accept: boolean) {
     const session = await auth();
@@ -27,5 +27,6 @@ export async function respondInvite(inviteId: string, accept: boolean) {
         return invite.workspaceId;
     });
 
+    revalidatePath("/dashboard");
     if (accept) redirect(`/workspaces/${workspaceId}`);
 }
