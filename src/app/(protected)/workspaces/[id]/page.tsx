@@ -3,7 +3,7 @@ import prisma from "@/src/lib/prisma";
 import { redirect } from "next/navigation";
 import { requireMembership } from "@/src/lib/authorization";
 import InviteMemberModal from "@/src/Components/InviteMemberModal";
-import CreateFeatureModal from "@/src/Components/CreateFeatureModal";
+import FeatureModal from "@/src/Components/FeatureModal";
 import FeaturesGrid from "@/src/Components/FeaturesGrid";
 
 export default async function WorkspacePage({
@@ -58,12 +58,12 @@ export default async function WorkspacePage({
                     )}
                 </div>
 
-                <CreateFeatureModal
+                <FeatureModal
                     workspaceId={workspace.id}
                     className="font-mono shrink-0 rounded-sm bg-[var(--text-primary)] px-4 py-2 text-xs uppercase tracking-[0.1em] text-black"
                 >
                     + nova feature
-                </CreateFeatureModal>
+                </FeatureModal>
             </div>
 
             <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_300px]">
