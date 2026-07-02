@@ -9,7 +9,26 @@ export async function inviteMember(workspaceId: string, formData: FormData) {
     if (!session?.user?.id) throw new Error("Não autenticado");
     await requireOwner(session.user.id, workspaceId);
 
-    const email = formData.get("email") as string;
+    const email = (formData.get("email") as string).trim().toLowerCase();
+
+    // bloqueia se já existe convite pendente ou aceito
+    const existing = await prisma.invite.findFirst({
+        where: { workspaceId, email },
+    });
+
+    if (existing) {
+        const reason = existing.status === "ACCEPTED"
+            ? "Esse e-mail já é membro do workspace."
+            : "Esse e-mail já tem um convite pendente.";
+        throw new Error(reason);
+    }
+
+    // também bloqueia se o email já tem membership direta (ex: owner)
+    const alreadyMember = await prisma.membership.findFirst({
+        where: { workspaceId, user: { email } },
+    });
+
+    if (alreadyMember) throw new Error("Esse e-mail já é membro do workspace.");
 
     await prisma.invite.create({
         data: { workspaceId, email, invitedById: session.user.id },

@@ -12,18 +12,20 @@ export async function respondInvite(inviteId: string, accept: boolean) {
         const invite = await tx.invite.findUniqueOrThrow({ where: { id: inviteId } });
         if (invite.email !== session.user!.email) throw new Error("Convite não pertence a este usuário");
 
-        await tx.invite.update({
-        where: { id: inviteId },
-        data: { status: accept ? "ACCEPTED" : "DECLINED", respondedAt: new Date() },
-        });
-
         if (accept) {
-        await tx.membership.upsert({
-            where: { userId_workspaceId: { userId: session.user!.id, workspaceId: invite.workspaceId } },
-            update: {},
-            create: { userId: session.user!.id, workspaceId: invite.workspaceId, role: "MEMBER" },
-        });
+            await tx.invite.update({
+                where: { id: inviteId },
+                data: { status: "ACCEPTED", respondedAt: new Date() },
+            });
+            await tx.membership.upsert({
+                where: { userId_workspaceId: { userId: session.user!.id, workspaceId: invite.workspaceId } },
+                update: {},
+                create: { userId: session.user!.id, workspaceId: invite.workspaceId, role: "MEMBER" },
+            });
+        } else {
+            await tx.invite.delete({ where: { id: inviteId } });
         }
+
         return invite.workspaceId;
     });
 
