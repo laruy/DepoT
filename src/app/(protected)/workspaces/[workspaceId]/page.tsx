@@ -9,18 +9,18 @@ import FeaturesGrid from "@/src/Components/FeaturesGrid";
 export default async function WorkspacePage({
     params,
 }: {
-    params: Promise<{ id: string }>;
+    params: Promise<{ workspaceId: string }>;
 }) {
-    const { id } = await params;
+    const { workspaceId } = await params;
 
     const session = await auth();
     if (!session?.user?.id) redirect("/login");
 
-    const membership = await requireMembership(session.user.id, id).catch(() => null);
+    const membership = await requireMembership(session.user.id, workspaceId).catch(() => null);
     if (!membership) redirect("/workspaces");
 
     const workspace = await prisma.workspace.findUnique({
-        where: { id },
+        where: { id: workspaceId },
         include: {
             memberships: { include: { user: true } },
             invites: { where: { status: "PENDING" } },

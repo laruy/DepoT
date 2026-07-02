@@ -1,7 +1,7 @@
 "use client";
 
+import { inviteMember } from "@/src/app/(protected)/workspaces/[workspaceId]/actions";
 import { useState, type ReactNode } from "react";
-import { inviteMember } from "@/src/app/(protected)/workspaces/[id]/actions";
 
 interface InviteMemberModalProps {
     workspaceId: string;

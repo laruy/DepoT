@@ -161,7 +161,6 @@ model Feature {
 model TestCase {
   id              String   @id @default(cuid())
   title           String
-  description     String?
   steps           String?
   expectedResult  String?
   priority        Priority @default(MEDIUM)

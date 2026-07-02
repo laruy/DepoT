@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useTransition, type ReactNode } from "react";
-import { createFeature, updateFeature, deleteFeature } from "@/src/app/(protected)/workspaces/[id]/actions";
+import { createFeature, deleteFeature, updateFeature } from "@/src/app/(protected)/workspaces/[workspaceId]/actions";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 
 interface FeatureItem {
     id: string;
