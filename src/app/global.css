@@ -35,6 +35,14 @@
   opacity: 0;
 }
 
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+a[role="button"] {
+  cursor: pointer;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .redline-strike {
     width: 0;

@@ -2,7 +2,7 @@ import { defineComputeConfig } from "@prisma/compute-sdk/config";
 
 export default defineComputeConfig({
   app: {
-    name: "my-app",
+    name: "DepoT",
     framework: "nextjs",
     env: ".env",
   },

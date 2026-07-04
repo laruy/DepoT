@@ -44,16 +44,16 @@ export default async function DashboardPage() {
                     +
                     </CreateWorkspaceModal>
                     <h2 className="font-display mt-4 text-xl text-[var(--text-primary)]">
-                    Nenhum workspace ainda.
+                        Nenhum workspace ainda.
                     </h2>
                     <p className="font-body mt-2 max-w-sm text-sm text-[var(--text-muted)]">
-                    Crie o primeiro repositório para começar a arquivar casos de teste, execuções e regressões da sua equipe.
+                        Crie o primeiro repositório para começar a arquivar casos de teste, execuções e regressões da sua equipe.
                     </p>
                     <CreateWorkspaceModal className="font-body mt-6 rounded-sm bg-[var(--text-primary)] px-4 py-2 text-sm font-medium text-black">
-                    Criar novo workspace →
+                        Criar novo workspace →
                     </CreateWorkspaceModal>
                     <p className="font-mono mt-4 text-xs text-[var(--text-muted)]/70">
-                    # você se torna owner automaticamente.
+                        # você se torna owner automaticamente.
                     </p>
                 </div>
                 ) : (
