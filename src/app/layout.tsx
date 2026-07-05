@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { fraunces, inter, plexMono } from "./fonts";
-import "./global.css";
+import "./global.css"
 
 export const metadata: Metadata = {
   title: "DepoT",
