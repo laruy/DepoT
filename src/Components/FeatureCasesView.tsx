@@ -1,8 +1,8 @@
 "use client";
 
+import { parseSteps, parseTags } from "@/src/lib/testCaseSteps";
 import { useRef, useState } from "react";
 import TestCaseModal from "./TestCaseModal";
-import { parseSteps, parseTags } from "@/src/lib/testCaseSteps";
 
 interface TestCaseItem {
     id: string;
@@ -11,7 +11,7 @@ interface TestCaseItem {
     expectedResult: string | null;
     priority: string;
     isAutomated: boolean;
-    automationTags: string | null;
+    tags: string | null;
     automationNotes: string | null;
 }
 
@@ -205,11 +205,11 @@ export default function FeatureCasesView({ workspaceId, featureId, testCases }: 
                 )}
 
                 {selected.isAutomated &&
-                (parseTags(selected.automationTags).length > 0 || selected.automationNotes) && (
+                (parseTags(selected.tags).length > 0 || selected.automationNotes) && (
                     <div className="mt-6 border-t border-[var(--rule)] pt-5">
-                    {parseTags(selected.automationTags).length > 0 && (
+                    {parseTags(selected.tags).length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
-                        {parseTags(selected.automationTags).map((tag) => (
+                        {parseTags(selected.tags).map((tag) => (
                             <span
                             key={tag}
                             className="font-mono rounded-sm border border-[var(--rule)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]"

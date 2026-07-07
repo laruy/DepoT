@@ -7,6 +7,8 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
 enum MembershipRole {
   OWNER
   MEMBER
@@ -15,13 +17,79 @@ enum MembershipRole {
 enum InviteStatus {
   PENDING
   ACCEPTED
-  DECLINED
 }
 
 enum Priority {
   LOW
   MEDIUM
   HIGH
+}
+
+enum PlanType {
+  MANUAL
+  AUTOMATED
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  memberships      Membership[]
+  ownedWorkspaces  Workspace[]  @relation("WorkspaceOwner")
+  invitesSent      Invite[]     @relation("InvitedBy")
+  testCasesCreated TestCase[]   @relation("TestCaseCreatedBy")
+  testPlansCreated TestPlan[]   @relation("TestPlanCreatedBy")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  expires      DateTime
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 model Workspace {
@@ -37,6 +105,7 @@ model Workspace {
   memberships Membership[]
   invites     Invite[]
   features    Feature[]
+  testPlans   TestPlan[]
 
   @@index([ownerId])
   @@map("workspaces")
@@ -47,93 +116,28 @@ model Membership {
   role     MembershipRole @default(MEMBER)
   joinedAt DateTime       @default(now())
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  // um usuário só tem 1 membership por workspace
   @@unique([userId, workspaceId])
   @@index([workspaceId])
   @@index([userId])
   @@map("memberships")
 }
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String  @map("user_id")
-  type              String
-  provider          String
-  providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique @map("session_token")
-  userId       String   @map("user_id")
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  accounts Account[]
-  sessions Session[]
-
-  ownedWorkspaces Workspace[]  @relation("WorkspaceOwner")
-  memberships     Membership[]
-
-  testCasesCreated TestCase[] @relation("CreatedBy")
-  invitesSent      Invite[]   @relation("InvitedBy")
-
-  @@map("users")
-}
-
-model VerificationToken {
-  identifier String
-  token      String
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
 model Invite {
-  id        String       @id @default(cuid())
-  email     String
-  status    InviteStatus @default(PENDING)
-  createdAt DateTime     @default(now())
+  id          String       @id @default(cuid())
+  email       String
+  status      InviteStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
   respondedAt DateTime?
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
   invitedById String?
-  invitedBy   User?   @relation("InvitedBy", fields: [invitedById], references: [id])
+  invitedBy   User?     @relation("InvitedBy", fields: [invitedById], references: [id])
 
   @@index([email])
   @@index([workspaceId])
@@ -156,6 +160,7 @@ model Feature {
   automationDoc AutomationDoc?
 
   @@index([workspaceId])
+  @@map("features")
 }
 
 model TestCase {
@@ -165,18 +170,20 @@ model TestCase {
   expectedResult  String?
   priority        Priority @default(MEDIUM)
   isAutomated     Boolean  @default(false)
-  automationTags  String?
+  tags            String?
   automationNotes String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  featureId String
-  feature   Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
-
+  featureId   String
+  feature     Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
   createdById String?
-  createdBy   User?   @relation("CreatedBy", fields: [createdById], references: [id])
+  createdBy   User?   @relation("TestCaseCreatedBy", fields: [createdById], references: [id])
+
+  testPlanCases TestPlanCase[]
 
   @@index([featureId])
+  @@map("test_cases")
 }
 
 model AutomationDoc {
@@ -186,4 +193,40 @@ model AutomationDoc {
 
   featureId String  @unique
   feature   Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@map("automation_docs")
+}
+
+model TestPlan {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        PlanType @default(MANUAL)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?     @relation("TestPlanCreatedBy", fields: [createdById], references: [id])
+
+  cases TestPlanCase[]
+
+  @@index([workspaceId])
+  @@map("test_plans")
+}
+
+model TestPlanCase {
+  id      String   @id @default(cuid())
+  order   Int      @default(0)
+  addedAt DateTime @default(now())
+
+  testPlanId String
+  testPlan   TestPlan @relation(fields: [testPlanId], references: [id], onDelete: Cascade)
+  testCaseId String
+  testCase   TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([testPlanId, testCaseId])
+  @@index([testPlanId])
+  @@map("test_plan_cases")
 }

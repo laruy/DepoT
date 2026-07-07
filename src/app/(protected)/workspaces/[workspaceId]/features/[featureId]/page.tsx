@@ -1,9 +1,9 @@
 import { auth } from "@/auth";
-import prisma from "@/src/lib/prisma";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { requireMembership } from "@/src/lib/authorization";
 import FeatureCasesView from "@/src/Components/FeatureCasesView";
+import { requireMembership } from "@/src/lib/authorization";
+import prisma from "@/src/lib/prisma";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function FeatureCasesPage({
     params,
@@ -33,7 +33,7 @@ export default async function FeatureCasesPage({
         expectedResult: tc.expectedResult,
         priority: tc.priority,
         isAutomated: tc.isAutomated,
-        automationTags: tc.automationTags,
+        tags: tc.tags,
         automationNotes: tc.automationNotes,
     }));
 

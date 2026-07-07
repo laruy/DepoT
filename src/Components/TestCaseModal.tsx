@@ -1,5 +1,10 @@
 "use client";
 
+import {
+    createTestCase,
+    deleteTestCase,
+    updateTestCase,
+} from "@/src/app/(protected)/workspaces/[workspaceId]/features/[featureId]/actions";
 import { parseSteps } from "@/src/lib/testCaseSteps";
 import {
     useEffect,
@@ -9,11 +14,6 @@ import {
     type KeyboardEvent,
     type ReactNode,
 } from "react";
-import {
-    createTestCase,
-    updateTestCase,
-    deleteTestCase,
-} from "@/src/app/(protected)/workspaces/[workspaceId]/features/[featureId]/actions";
 
 interface TestCaseItem {
     id: string;
@@ -22,7 +22,7 @@ interface TestCaseItem {
     expectedResult: string | null;
     priority: string;
     isAutomated: boolean;
-    automationTags: string | null;
+    tags: string | null;
     automationNotes: string | null;
 }
 
@@ -290,8 +290,8 @@ export default function TestCaseModal({
                             Tags de automação
                         </label>
                         <input
-                            name="automationTags"
-                            defaultValue={testCase?.automationTags ?? ""}
+                            name="tags"
+                            defaultValue={testCase?.tags ?? ""}
                             placeholder="smoke, regressao"
                             className="mt-2 w-full rounded-sm border border-[var(--rule)] bg-transparent p-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--red-signal)]"
                         />

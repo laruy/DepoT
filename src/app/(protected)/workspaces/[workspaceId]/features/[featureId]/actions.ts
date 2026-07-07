@@ -1,10 +1,10 @@
 "use server";
 import { auth } from "@/auth";
-import prisma from "@/src/lib/prisma";
-import { requireMembership } from "@/src/lib/authorization";
-import { revalidatePath } from "next/cache";
-import { stringifySteps } from "@/src/lib/testCaseSteps";
 import type { Priority } from "@/src/generated/prisma/enums";
+import { requireMembership } from "@/src/lib/authorization";
+import prisma from "@/src/lib/prisma";
+import { stringifySteps } from "@/src/lib/testCaseSteps";
+import { revalidatePath } from "next/cache";
 
 function readTestCaseForm(formData: FormData) {
     const title = formData.get("title") as string;
@@ -12,16 +12,16 @@ function readTestCaseForm(formData: FormData) {
     const priority = ((formData.get("priority") as string) || "MEDIUM") as Priority;
     const isAutomated = formData.get("isAutomated") === "on";
 
-    const automationTagsRaw = (formData.get("automationTags") as string) || "";
-    const automationTags =
-        automationTagsRaw.split(",").map((t) => t.trim()).filter(Boolean).join(",") || null;
+    const tagsRaw = (formData.get("tags") as string) || "";
+    const tags =
+        tagsRaw.split(",").map((t) => t.trim()).filter(Boolean).join(",") || null;
 
     const automationNotes = (formData.get("automationNotes") as string) || null;
 
     const stepsRaw = formData.getAll("step").map((s) => String(s));
     const steps = stringifySteps(stepsRaw);
 
-    return { title, steps, expectedResult, priority, isAutomated, automationTags, automationNotes };
+    return { title, steps, expectedResult, priority, isAutomated, tags, automationNotes };
 }
 
 export async function createTestCase(workspaceId: string, featureId: string, formData: FormData) {
