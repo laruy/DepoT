@@ -95,6 +95,7 @@ model VerificationToken {
 model Workspace {
   id          String   @id @default(cuid())
   name        String
+  slug        String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -107,6 +108,7 @@ model Workspace {
   features    Feature[]
   testPlans   TestPlan[]
 
+  @@unique([ownerId, slug])
   @@index([ownerId])
   @@map("workspaces")
 }
@@ -147,6 +149,7 @@ model Invite {
 model Feature {
   id          String   @id @default(cuid())
   name        String
+  slug        String
   description String?
   color       String   @default("#A78BFA")
   maestroTags String?
@@ -159,6 +162,7 @@ model Feature {
   testCases     TestCase[]
   automationDoc AutomationDoc?
 
+  @@unique([workspaceId, slug])
   @@index([workspaceId])
   @@map("features")
 }
@@ -200,6 +204,7 @@ model AutomationDoc {
 model TestPlan {
   id          String   @id @default(cuid())
   name        String
+  slug        String
   description String?
   type        PlanType @default(MANUAL)
   createdAt   DateTime @default(now())
@@ -212,6 +217,7 @@ model TestPlan {
 
   cases TestPlanCase[]
 
+  @@unique([workspaceId, slug])
   @@index([workspaceId])
   @@map("test_plans")
 }
