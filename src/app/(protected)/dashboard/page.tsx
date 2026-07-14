@@ -61,7 +61,7 @@ export default async function DashboardPage() {
                     {memberships.map((m) => (
                     <li key={m.id}>
                         <Link
-                        href={`/workspaces/${m.workspaceId}`}
+                        href={`/workspaces/${m.workspace.slug}`}
                         className="flex items-center justify-between rounded-sm border border-[var(--rule)] p-4 transition-colors hover:border-[var(--red-signal)]"
                         >
                         <span className="font-body text-[var(--text-primary)]">{m.workspace.name}</span>

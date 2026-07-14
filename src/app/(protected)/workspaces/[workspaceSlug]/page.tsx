@@ -9,18 +9,15 @@ import FeaturesGrid from "@/src/Components/FeaturesGrid";
 export default async function WorkspacePage({
     params,
 }: {
-    params: Promise<{ workspaceId: string }>;
+    params: Promise<{ workspaceSlug: string }>;
 }) {
-    const { workspaceId } = await params;
+    const { workspaceSlug } = await params;
 
     const session = await auth();
     if (!session?.user?.id) redirect("/login");
 
-    const membership = await requireMembership(session.user.id, workspaceId).catch(() => null);
-    if (!membership) redirect("/workspaces");
-
-    const workspace = await prisma.workspace.findUnique({
-        where: { id: workspaceId },
+    const workspace = await prisma.workspace.findFirst({
+        where: { slug: workspaceSlug },
         include: {
             memberships: { include: { user: true } },
             invites: { where: { status: "PENDING" } },
@@ -30,17 +27,21 @@ export default async function WorkspacePage({
             },
         },
     });
-    if (!workspace) redirect("/workspaces");
+    if (!workspace) redirect("/dashboard");
+
+    const membership = await requireMembership(session.user.id, workspace.id).catch(() => null);
+    if (!membership) redirect("/dashboard");
 
     const features = workspace.features.map((f) => ({
         id: f.id,
         name: f.name,
+        slug: f.slug,
         description: f.description,
         color: f.color,
         maestroTags: f.maestroTags,
         testCaseCount: f._count.testCases,
     }));
-
+    
     return (
         <main className="mx-auto max-w-7xl px-6 py-12">
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--rule)] pb-6">
@@ -57,22 +58,19 @@ export default async function WorkspacePage({
                         </p>
                     )}
                 </div>
-
-                <FeatureModal
-                    workspaceId={workspace.id}
-                    className="font-mono shrink-0 rounded-sm bg-[var(--text-primary)] px-4 py-2 text-xs uppercase tracking-[0.1em] text-black"
-                >
-                    + nova feature
-                </FeatureModal>
+                    <FeatureModal
+                        workspaceSlug={workspaceSlug}
+                        className="font-mono shrink-0 rounded-sm bg-[var(--text-primary)] px-4 py-2 text-xs uppercase tracking-[0.1em] text-black"
+                    >
+                        + nova feature
+                    </FeatureModal>
             </div>
 
             <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_300px]">
-                {/* Features — conteúdo central */}
                 <section>
-                    <FeaturesGrid features={features} workspaceId={workspace.id} />
+                    <FeaturesGrid features={features} workspaceSlug={workspaceSlug} />
                 </section>
 
-                {/* Membros — painel lateral */}
                 <aside>
                     <p className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--text-muted)]">
                         Membros · {String(workspace.memberships.length).padStart(2, "0")}
@@ -97,7 +95,7 @@ export default async function WorkspacePage({
                     {membership.role === "OWNER" && (
                         <div className="mt-4">
                             <InviteMemberModal
-                                workspaceId={workspace.id}
+                                workspaceSlug={workspaceSlug}
                                 className="font-mono block w-full rounded-sm border border-dashed border-[var(--rule)] p-3 text-center text-xs text-[var(--text-muted)] hover:border-[var(--red-signal)] hover:text-[var(--red-signal)]"
                             >
                                 + convidar membro
@@ -106,10 +104,7 @@ export default async function WorkspacePage({
                             {workspace.invites.length > 0 && (
                                 <div className="mt-3 space-y-1">
                                     {workspace.invites.map((i) => (
-                                        <p
-                                            key={i.id}
-                                            className="font-mono text-xs text-[var(--text-muted)]/70"
-                                        >
+                                        <p key={i.id} className="font-mono text-xs text-[var(--text-muted)]/70">
                                             {i.email} — pendente
                                         </p>
                                     ))}

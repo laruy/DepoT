@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 interface WorkspaceSidebarProps {
-    workspace: { id: string; name: string };
+    workspace: { slug: string; name: string };
 }
 
 const NAV_ITEMS = [
@@ -14,14 +14,11 @@ const NAV_ITEMS = [
 
 export default function WorkspaceSidebar({ workspace }: WorkspaceSidebarProps) {
     const pathname = usePathname();
-    const base = `/workspaces/${workspace.id}`;
+    const base = `/workspaces/${workspace.slug}`;
 
     function isActive(path: string) {
         const full = `${base}${path}`;
-        if (path === "") {
-            // features: ativo em /workspaces/[id] e /workspaces/[id]/features/*
-            return pathname === full || pathname.startsWith(`${full}/features`);
-        }
+        if (path === "") return pathname === full || pathname.startsWith(`${full}/features`);
         return pathname.startsWith(full);
     }
 

@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 
 interface Workspace {
-    id: string;
-    name: string;
-    }
+  slug: string;
+  name: string;
+}
 
 export default function WorkspacesDropdown({ workspaces }: { workspaces: Workspace[] }) {
     const pathname = usePathname();
@@ -16,9 +16,7 @@ export default function WorkspacesDropdown({ workspaces }: { workspaces: Workspa
 
     useEffect(() => {
         function onClickOutside(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setIsOpen(false);
-            }
+        if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
         }
         document.addEventListener("mousedown", onClickOutside);
         return () => document.removeEventListener("mousedown", onClickOutside);
@@ -55,11 +53,11 @@ export default function WorkspacesDropdown({ workspaces }: { workspaces: Workspa
             ) : (
                 <ul>
                 {workspaces.map((ws) => (
-                    <li key={ws.id}>
+                    <li key={ws.slug}>
                     <Link
-                        href={`/workspaces/${ws.id}`}
+                        href={`/workspaces/${ws.slug}`}
                         className={`font-body block truncate border-b border-[var(--rule)] px-4 py-2.5 text-sm transition-colors last:border-0 ${
-                        pathname.startsWith(`/workspaces/${ws.id}`)
+                        pathname.startsWith(`/workspaces/${ws.slug}`)
                             ? "text-[var(--red-signal)]"
                             : "text-[var(--text-primary)] hover:text-[var(--red-signal)]"
                         }`}

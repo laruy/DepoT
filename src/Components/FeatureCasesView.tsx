@@ -1,8 +1,8 @@
 "use client";
 
-import { parseSteps, parseTags } from "@/src/lib/testCaseSteps";
 import { useRef, useState } from "react";
 import TestCaseModal from "./TestCaseModal";
+import { parseSteps, parseTags } from "@/src/lib/testCaseSteps";
 
 interface TestCaseItem {
     id: string;
@@ -16,8 +16,8 @@ interface TestCaseItem {
 }
 
 interface FeatureCasesViewProps {
-    workspaceId: string;
-    featureId: string;
+    workspaceSlug: string;
+    featureSlug: string;
     testCases: TestCaseItem[];
 }
 
@@ -32,7 +32,11 @@ const MIN_LEFT = 220;
 const MAX_LEFT = 600;
 const DEFAULT_LEFT = 320;
 
-export default function FeatureCasesView({ workspaceId, featureId, testCases }: FeatureCasesViewProps) {
+export default function FeatureCasesView({
+    workspaceSlug,
+    featureSlug,
+    testCases
+    }: FeatureCasesViewProps) {
     const [selectedId, setSelectedId] = useState<string | null>(testCases[0]?.id ?? null);
     const [editingCase, setEditingCase] = useState<TestCaseItem | null>(null);
     const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT);
@@ -78,10 +82,10 @@ export default function FeatureCasesView({ workspaceId, featureId, testCases }: 
                 Casos · {String(testCases.length).padStart(2, "0")}
             </p>
             <TestCaseModal
-                workspaceId={workspaceId}
-                featureId={featureId}
+                workspaceSlug={workspaceSlug}
+                featureSlug={featureSlug}
                 className="font-mono text-xs text-[var(--red-signal)] hover:underline"
-            >
+                >
                 + novo
             </TestCaseModal>
             </div>
@@ -89,9 +93,7 @@ export default function FeatureCasesView({ workspaceId, featureId, testCases }: 
             <ul className="flex-1 overflow-y-auto">
             {testCases.length === 0 ? (
                 <li className="p-4">
-                <p className="font-body text-xs text-[var(--text-muted)]">
-                    Nenhum caso ainda.
-                </p>
+                <p className="font-body text-xs text-[var(--text-muted)]">Nenhum caso ainda.</p>
                 </li>
             ) : (
                 testCases.map((tc, index) => (
@@ -125,7 +127,7 @@ export default function FeatureCasesView({ workspaceId, featureId, testCases }: 
         {/* Divisor arrastável */}
         <div
             onMouseDown={onMouseDown}
-            className="group relative w-1 shrink-0 cursor-col-resize bg-[var(--rule)] hover:bg-[var(--red-signal)] transition-colors"
+            className="group relative w-1 shrink-0 cursor-col-resize bg-[var(--rule)] transition-colors hover:bg-[var(--red-signal)]"
         >
             <div className="absolute inset-y-0 -left-1 -right-1" />
         </div>
@@ -133,10 +135,8 @@ export default function FeatureCasesView({ workspaceId, featureId, testCases }: 
         {/* Painel direito — detalhe do caso */}
         <div className="flex-1 overflow-y-auto bg-[var(--bg-panel)]">
             {!selected ? (
-            <div className="flex h-full flex-col items-center justify-center text-center p-8">
-                <p className="font-display text-xl text-[var(--text-primary)]">
-                Nenhum caso selecionado.
-                </p>
+            <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+                <p className="font-display text-xl text-[var(--text-primary)]">Nenhum caso selecionado.</p>
                 <p className="font-body mt-2 max-w-sm text-sm text-[var(--text-muted)]">
                 Selecione um caso na lista ou crie um novo.
                 </p>
@@ -176,9 +176,7 @@ export default function FeatureCasesView({ workspaceId, featureId, testCases }: 
                 </div>
 
                 <div className="mt-6">
-                <p className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--text-muted)]">
-                    Steps
-                </p>
+                <p className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--text-muted)]">Steps</p>
                 <ol className="mt-3 space-y-3">
                     {parseSteps(selected.steps).map((step, index) => (
                     <li key={index} className="flex gap-4 rounded-sm border border-[var(--rule)] p-4">
@@ -229,14 +227,15 @@ export default function FeatureCasesView({ workspaceId, featureId, testCases }: 
             </article>
             )}
         </div>
-
-        <TestCaseModal
-            workspaceId={workspaceId}
-            featureId={featureId}
-            testCase={editingCase}
-            isOpen={editingCase !== null}
-            onClose={() => setEditingCase(null)}
-        />
+            {editingCase && (
+                <TestCaseModal
+                    workspaceSlug={workspaceSlug}
+                    featureSlug={featureSlug}
+                    testCase={editingCase}
+                    isOpen={true}
+                    onClose={() => setEditingCase(null)}
+                />
+            )}
         </div>
     );
 }

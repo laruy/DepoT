@@ -1,14 +1,15 @@
 "use server";
 import { auth } from "@/auth";
 import prisma from "@/src/lib/prisma";
+import slugify from "slugify";
 import { redirect } from "next/navigation";
 
 export async function createWorkspace(formData: FormData) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Não autenticado");
 
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string | null;
+    const name = (formData.get("name") as string).trim();
+    const description = (formData.get("description") as string) || null;
 
     const inviteEmails = formData
         .getAll("inviteEmails")
@@ -17,9 +18,23 @@ export async function createWorkspace(formData: FormData) {
 
     const uniqueEmails = Array.from(new Set(inviteEmails));
 
+    // valida nome único por owner
+    const existingName = await prisma.workspace.findFirst({
+        where: { ownerId: session.user.id, name: { equals: name, mode: "insensitive" } },
+    });
+    if (existingName) throw new Error("Você já tem um workspace com esse nome.");
+
+    // gera slug único
+    const base = slugify(name, { lower: true, strict: true, trim: true });
+    let slug = base;
+    let counter = 2;
+    while (await prisma.workspace.findUnique({ where: { ownerId_slug: { ownerId: session.user.id, slug } } })) {
+        slug = `${base}-${counter++}`;
+    }
+
     const workspace = await prisma.$transaction(async (tx) => {
         const ws = await tx.workspace.create({
-            data: { name, description, ownerId: session.user!.id },
+            data: { name, slug, description, ownerId: session.user!.id },
         });
 
         await tx.membership.create({
@@ -39,5 +54,5 @@ export async function createWorkspace(formData: FormData) {
         return ws;
     });
 
-    redirect(`/workspaces/${workspace.id}`);
+    redirect(`/workspaces/${workspace.slug}`);
 }

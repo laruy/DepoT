@@ -10,28 +10,26 @@ export default async function WorkspaceLayout({
     params,
 }: {
     children: ReactNode;
-    params: Promise<{ workspaceId: string }>;
+    params: Promise<{ workspaceSlug: string }>;
 }) {
-    const { workspaceId } = await params;
+    const { workspaceSlug } = await params;
 
     const session = await auth();
     if (!session?.user?.id) redirect("/login");
 
-    const membership = await requireMembership(session.user.id, workspaceId).catch(() => null);
-    if (!membership) redirect("/dashboard");
-
-    const workspace = await prisma.workspace.findUnique({
-        where: { id: workspaceId },
-        select: { id: true, name: true },
+    const workspace = await prisma.workspace.findFirst({
+        where: { slug: workspaceSlug },
+        select: { id: true, name: true, slug: true },
     });
     if (!workspace) redirect("/dashboard");
+
+    const membership = await requireMembership(session.user.id, workspace.id).catch(() => null);
+    if (!membership) redirect("/dashboard");
 
     return (
         <div className="flex min-h-[calc(100vh-53px)]">
             <WorkspaceSidebar workspace={workspace} />
-            <div className="flex-1 overflow-auto">
-                {children}
-            </div>
+            <div className="flex-1 overflow-auto">{children}</div>
         </div>
     );
 }

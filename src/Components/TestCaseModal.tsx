@@ -1,19 +1,19 @@
 "use client";
 
 import {
-    createTestCase,
-    deleteTestCase,
-    updateTestCase,
-} from "@/src/app/(protected)/workspaces/[workspaceId]/features/[featureId]/actions";
+    useState,
+    useRef,
+    useEffect,
+    useTransition,
+    type ReactNode,
+    type KeyboardEvent,
+} from "react";
 import { parseSteps } from "@/src/lib/testCaseSteps";
 import {
-    useEffect,
-    useRef,
-    useState,
-    useTransition,
-    type KeyboardEvent,
-    type ReactNode,
-} from "react";
+    createTestCase,
+    updateTestCase,
+    deleteTestCase,
+} from "@/src/app/(protected)/workspaces/[workspaceSlug]/features/[featureSlug]/actions";
 
 interface TestCaseItem {
     id: string;
@@ -27,20 +27,18 @@ interface TestCaseItem {
 }
 
 interface TestCaseModalProps {
-    workspaceId: string;
-    featureId: string;
-    testCase?: TestCaseItem | null; // null/undefined = criação · presente = edição
-
+    workspaceSlug: string;
+    featureSlug: string;
+    testCase?: TestCaseItem | null;
     children?: ReactNode;
     className?: string;
-
     isOpen?: boolean;
     onClose?: () => void;
 }
 
 export default function TestCaseModal({
-    workspaceId,
-    featureId,
+    workspaceSlug,
+    featureSlug,
     testCase,
     children,
     className,
@@ -57,7 +55,6 @@ export default function TestCaseModal({
     }
 
     const isEditing = Boolean(testCase);
-
     const [steps, setSteps] = useState<string[]>(() =>
         testCase?.steps ? parseSteps(testCase.steps) : [""]
     );
@@ -75,13 +72,13 @@ export default function TestCaseModal({
     }, [isOpen, testCase]);
 
     const action = isEditing
-        ? updateTestCase.bind(null, workspaceId, featureId, testCase!.id)
-        : createTestCase.bind(null, workspaceId, featureId);
+        ? updateTestCase.bind(null, workspaceSlug, featureSlug, testCase!.id)
+        : createTestCase.bind(null, workspaceSlug, featureSlug);
 
     function handleDelete() {
         if (!testCase) return;
         startTransition(async () => {
-        await deleteTestCase(workspaceId, featureId, testCase.id);
+        await deleteTestCase(workspaceSlug, featureSlug, testCase.id);
         close();
         });
     }
@@ -184,6 +181,21 @@ export default function TestCaseModal({
                     </div>
 
                     <div>
+                    <label className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--text-muted)]">
+                        Tags
+                    </label>
+                    <input
+                        name="tags"
+                        defaultValue={testCase?.tags ?? ""}
+                        placeholder="smoke, staging, regressao"
+                        className="mt-2 w-full rounded-sm border border-[var(--rule)] bg-transparent p-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--red-signal)]"
+                    />
+                    <p className="mt-1 font-mono text-xs text-[var(--text-muted)]/70">
+                        # separadas por vírgula
+                    </p>
+                    </div>
+
+                    <div>
                     <div className="flex items-center justify-between">
                         <label className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--text-muted)]">
                         Steps
@@ -202,9 +214,7 @@ export default function TestCaseModal({
                             <input
                             name="step"
                             value={step}
-                            ref={(el) => {
-                                inputRefs.current[index] = el;
-                            }}
+                            ref={(el) => { inputRefs.current[index] = el; }}
                             onChange={(e) =>
                                 setSteps((prev) =>
                                 prev.map((s, i) => (i === index ? e.target.value : s))
@@ -285,29 +295,16 @@ export default function TestCaseModal({
 
                     {isAutomated && (
                     <div className="space-y-4 rounded-sm border border-dashed border-[var(--rule)] p-4">
-                        <div>
                         <label className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--text-muted)]">
-                            Tags de automação
-                        </label>
-                        <input
-                            name="tags"
-                            defaultValue={testCase?.tags ?? ""}
-                            placeholder="smoke, regressao"
-                            className="mt-2 w-full rounded-sm border border-[var(--rule)] bg-transparent p-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--red-signal)]"
-                        />
-                        </div>
-                        <div>
-                        <label className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--text-muted)]">
-                            Notas de automação
+                        Notas de automação
                         </label>
                         <textarea
-                            name="automationNotes"
-                            rows={2}
-                            defaultValue={testCase?.automationNotes ?? ""}
-                            placeholder="Observações pra quem for automatizar"
-                            className="mt-2 w-full resize-none rounded-sm border border-[var(--rule)] bg-transparent p-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--red-signal)]"
+                        name="automationNotes"
+                        rows={2}
+                        defaultValue={testCase?.automationNotes ?? ""}
+                        placeholder="Observações pra quem for automatizar"
+                        className="mt-2 w-full resize-none rounded-sm border border-[var(--rule)] bg-transparent p-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--red-signal)]"
                         />
-                        </div>
                     </div>
                     )}
 

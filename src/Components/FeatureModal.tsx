@@ -1,7 +1,7 @@
 "use client";
 
-import { createFeature, deleteFeature, updateFeature } from "@/src/app/(protected)/workspaces/[workspaceId]/actions";
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useState, useEffect, useTransition, type ReactNode } from "react";
+import { createFeature, updateFeature, deleteFeature } from "@/src/app/(protected)/workspaces/[workspaceSlug]/actions";
 
 interface FeatureItem {
     id: string;
@@ -12,14 +12,10 @@ interface FeatureItem {
 }
 
 interface FeatureModalProps {
-    workspaceId: string;
-    feature?: FeatureItem | null; // null/undefined = criação · presente = edição
-
-    // Modo trigger: passa children + className, o componente se controla por dentro.
+    workspaceSlug: string;
+    feature?: FeatureItem | null;
     children?: ReactNode;
     className?: string;
-
-    // Modo controlado: a abertura é decidida de fora (ex: clique no card).
     isOpen?: boolean;
     onClose?: () => void;
 }
@@ -27,24 +23,20 @@ interface FeatureModalProps {
 const DEFAULT_COLOR = "#E11D2A";
 
 export default function FeatureModal({
-    workspaceId,
+    workspaceSlug,
     feature,
     children,
     className,
     isOpen: controlledIsOpen,
     onClose: controlledOnClose,
-    }: FeatureModalProps) {
+}: FeatureModalProps) {
     const isTriggerMode = children !== undefined;
-
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = isTriggerMode ? internalOpen : controlledIsOpen ?? false;
 
     function close() {
-        if (isTriggerMode) {
-        setInternalOpen(false);
-        } else {
-        controlledOnClose?.();
-        }
+        if (isTriggerMode) setInternalOpen(false);
+        else controlledOnClose?.();
     }
 
     const isEditing = Boolean(feature);
@@ -54,24 +46,23 @@ export default function FeatureModal({
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [isPending, startTransition] = useTransition();
 
-    // reseta os campos sempre que o modal abre (pra criação ou pra outra feature)
     useEffect(() => {
         if (isOpen) {
-        setDescription(feature?.description ?? "");
-        setColor(feature?.color ?? DEFAULT_COLOR);
-        setConfirmDelete(false);
+            setDescription(feature?.description ?? "");
+            setColor(feature?.color ?? DEFAULT_COLOR);
+            setConfirmDelete(false);
         }
     }, [isOpen, feature]);
 
     const action = isEditing
-        ? updateFeature.bind(null, workspaceId, feature!.id)
-        : createFeature.bind(null, workspaceId);
+        ? updateFeature.bind(null, workspaceSlug, feature!.id)
+        : createFeature.bind(null, workspaceSlug);
 
     function handleDelete() {
         if (!feature) return;
         startTransition(async () => {
-        await deleteFeature(workspaceId, feature.id);
-        close();
+            await deleteFeature(workspaceSlug, feature.id);
+            close();
         });
     }
 
@@ -118,7 +109,6 @@ export default function FeatureModal({
                     <p className="font-mono mt-2 text-xs text-[var(--text-muted)]">
                     # os casos de teste vinculados também serão removidos. Essa ação não pode ser desfeita.
                     </p>
-
                     <div className="mt-6 flex justify-end gap-3 border-t border-[var(--rule)] pt-5">
                     <button
                         type="button"
@@ -226,7 +216,7 @@ export default function FeatureModal({
                         type="submit"
                         className="rounded-sm bg-[var(--text-primary)] px-4 py-2 text-sm font-medium text-black"
                         >
-                        {isEditing ? "Salvar" : "Criar feature →"}
+                        {isEditing ? "Salvar →" : "Criar feature →"}
                         </button>
                     </div>
                     </div>

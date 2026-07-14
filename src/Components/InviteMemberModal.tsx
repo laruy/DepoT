@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { inviteMember } from "@/src/app/(protected)/workspaces/[workspaceId]/actions";
+import { inviteMember } from "@/src/app/(protected)/workspaces/[workspaceSlug]/actions";
 
 interface InviteMemberModalProps {
-    workspaceId: string;
+    workspaceSlug: string;
     children: ReactNode;
     className?: string;
 }
 
-export default function InviteMemberModal({ workspaceId, children, className }: InviteMemberModalProps) {
+export default function InviteMemberModal({ workspaceSlug, children, className }: InviteMemberModalProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isPending, setIsPending] = useState(false);
@@ -23,7 +23,7 @@ export default function InviteMemberModal({ workspaceId, children, className }: 
         setError(null);
         setIsPending(true);
         try {
-        await inviteMember.bind(null, workspaceId)(formData);
+        await inviteMember.bind(null, workspaceSlug)(formData);
         handleClose();
         } catch (err) {
         setError(err instanceof Error ? err.message : "Erro ao enviar convite.");
