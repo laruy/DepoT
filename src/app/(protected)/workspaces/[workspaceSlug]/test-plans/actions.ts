@@ -76,7 +76,7 @@ export async function deleteTestPlan(workspaceSlug: string, testPlanSlug: string
     redirect(`/workspaces/${workspaceSlug}/test-plans`);
 }
 
-export async function addCaseToPlan(workspaceSlug: string, testPlanSlug: string, testCaseId: string) {
+export async function saveTestPlanCases(workspaceSlug: string, testPlanSlug: string, testCaseIds: string[]) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Não autenticado");
 
@@ -87,58 +87,18 @@ export async function addCaseToPlan(workspaceSlug: string, testPlanSlug: string,
 
     await requireMembership(session.user.id, plan.workspaceId);
 
-    const testCase = await prisma.testCase.findFirst({
-        where: { id: testCaseId, feature: { workspaceId: plan.workspaceId } },
-    });
-    if (!testCase) throw new Error("Caso de teste não encontrado");
-
-    await prisma.testPlanCase.upsert({
-        where: { testPlanId_testCaseId: { testPlanId: plan.id, testCaseId } },
-        update: {},
-        create: { testPlanId: plan.id, testCaseId },
-    });
-
-    revalidatePath(`/workspaces/${workspaceSlug}/test-plans/${testPlanSlug}`);
-}
-
-export async function removeCaseFromPlan(workspaceSlug: string, testPlanSlug: string, testCaseId: string) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Não autenticado");
-
-    const plan = await prisma.testPlan.findFirst({
-        where: { slug: testPlanSlug, workspace: { slug: workspaceSlug } },
-    });
-    if (!plan) throw new Error("Plano não encontrado");
-
-    await requireMembership(session.user.id, plan.workspaceId);
-
-    await prisma.testPlanCase.deleteMany({ where: { testPlanId: plan.id, testCaseId } });
-
-    revalidatePath(`/workspaces/${workspaceSlug}/test-plans/${testPlanSlug}`);
-}
-
-export async function addCasesByTag(workspaceSlug: string, testPlanSlug: string, tag: string) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Não autenticado");
-
-    const plan = await prisma.testPlan.findFirst({
-        where: { slug: testPlanSlug, workspace: { slug: workspaceSlug } },
-    });
-    if (!plan) throw new Error("Plano não encontrado");
-
-    await requireMembership(session.user.id, plan.workspaceId);
-
-    const cases = await prisma.testCase.findMany({
-        where: {
-            feature: { workspaceId: plan.workspaceId },
-            tags: { contains: tag },
-            ...(plan.type === "AUTOMATED" ? { isAutomated: true } : {}),
-        },
-    });
-
-    await prisma.testPlanCase.createMany({
-        data: cases.map((tc) => ({ testPlanId: plan.id, testCaseId: tc.id })),
-        skipDuplicates: true,
+    // apaga todos os casos atuais e recria com a lista nova
+    await prisma.$transaction(async (tx) => {
+        await tx.testPlanCase.deleteMany({ where: { testPlanId: plan.id } });
+        if (testCaseIds.length > 0) {
+            await tx.testPlanCase.createMany({
+                data: testCaseIds.map((testCaseId, index) => ({
+                    testPlanId: plan.id,
+                    testCaseId,
+                    order: index,
+                })),
+            });
+        }
     });
 
     revalidatePath(`/workspaces/${workspaceSlug}/test-plans/${testPlanSlug}`);

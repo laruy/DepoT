@@ -79,9 +79,6 @@ export default async function TestPlanDetailPage({
     const maestroTags = Array.from(new Set(
         planCases.flatMap((tc) => tc.tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [])
     ));
-    const maestroCommand = plan.type === "AUTOMATED" && maestroTags.length > 0
-        ? `maestro test --tags=${maestroTags.join(",")}`
-        : null;
 
     return (
         <main className="mx-auto max-w-7xl px-6 py-12">
@@ -123,14 +120,6 @@ export default async function TestPlanDetailPage({
                     </TestPlanModal>
                 </div>
 
-                {maestroCommand && (
-                    <div className="mt-4 flex items-center gap-3 rounded-sm border border-[var(--rule)] bg-[var(--bg-panel)] px-4 py-3">
-                        <span className="font-mono text-xs text-[var(--text-muted)]">comando</span>
-                        <code className="font-mono flex-1 text-sm text-[var(--red-signal)]">
-                            {maestroCommand}
-                        </code>
-                    </div>
-                )}
             </div>
 
             <div className="mt-8">
