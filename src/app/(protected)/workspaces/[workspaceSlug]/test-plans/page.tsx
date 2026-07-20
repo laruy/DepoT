@@ -7,10 +7,13 @@ import TestPlanModal from "@/src/Components/TestPlanModal";
 
 export default async function TestPlansPage({
     params,
+    searchParams,
 }: {
     params: Promise<{ workspaceSlug: string }>;
+    searchParams: Promise<{ tipo?: string }>;
 }) {
     const { workspaceSlug } = await params;
+    const { tipo } = await searchParams;
 
     const session = await auth();
     if (!session?.user?.id) redirect("/login");
@@ -24,7 +27,10 @@ export default async function TestPlansPage({
     if (!membership) redirect("/dashboard");
 
     const testPlans = await prisma.testPlan.findMany({
-        where: { workspaceId: workspace.id },
+        where: {
+            workspaceId: workspace.id,
+            ...(tipo === "manual" ? { type: "MANUAL" } : tipo === "automatizado" ? { type: "AUTOMATED" } : {}),
+        },
         orderBy: { createdAt: "desc" },
         include: { _count: { select: { cases: true } } },
     });
@@ -49,14 +55,35 @@ export default async function TestPlansPage({
                 </TestPlanModal>
             </div>
 
-            <div className="mt-8">
+            {/* Filtro de tipo */}
+            <div className="mt-6 flex gap-2">
+                {[
+                    { label: "todos", value: undefined },
+                    { label: "manual", value: "manual" },
+                    { label: "automatizado", value: "automatizado" },
+                ].map(({ label, value }) => (
+                    <Link
+                        key={label}
+                        href={value ? `?tipo=${value}` : "?"}
+                        className={`font-mono rounded-sm border px-3 py-1.5 text-xs uppercase tracking-[0.1em] transition-colors ${
+                            tipo === value || (!tipo && !value)
+                                ? "border-[var(--red-signal)] text-[var(--red-signal)]"
+                                : "border-[var(--rule)] text-[var(--text-muted)] hover:border-[var(--red-signal)] hover:text-[var(--red-signal)]"
+                        }`}
+                    >
+                        {label}
+                    </Link>
+                ))}
+            </div>
+
+            <div className="mt-4">
                 {testPlans.length === 0 ? (
                     <div className="flex flex-col items-center justify-center rounded-sm border border-dashed border-[var(--rule)] py-24 text-center">
                         <p className="font-display text-xl text-[var(--text-primary)]">
                             Nenhum plano ainda.
                         </p>
                         <p className="font-body mt-2 max-w-sm text-sm text-[var(--text-muted)]">
-                            Crie um plano pra organizar e executar seus casos de teste.
+                            {tipo ? "Nenhum plano com esse tipo." : "Crie um plano pra organizar e executar seus casos de teste."}
                         </p>
                     </div>
                 ) : (
@@ -73,7 +100,7 @@ export default async function TestPlansPage({
                                                 ? "border-[var(--red-signal)] text-[var(--red-signal)]"
                                                 : "border-[var(--rule)] text-[var(--text-muted)]"
                                         }`}>
-                                            {plan.type === "AUTOMATED" ? "Auto" : "Manual"}
+                                            {plan.type === "AUTOMATED" ? "Automatizado" : "Manual"}
                                         </span>
                                         <span className="font-body text-[var(--text-primary)]">{plan.name}</span>
                                         {plan.description && (
