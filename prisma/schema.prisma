@@ -30,6 +30,20 @@ enum PlanType {
   AUTOMATED
 }
 
+enum RunStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+}
+
+enum CaseRunStatus {
+  PENDING
+  PASSED
+  FAILED
+  SKIPPED
+}
+
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -48,6 +62,7 @@ model User {
   invitesSent      Invite[]     @relation("InvitedBy")
   testCasesCreated TestCase[]   @relation("TestCaseCreatedBy")
   testPlansCreated TestPlan[]   @relation("TestPlanCreatedBy")
+  testRunsExecuted TestRun[]    @relation("ExecutedBy")
 
   @@map("users")
 }
@@ -97,6 +112,7 @@ model Workspace {
   name        String
   slug        String
   description String?
+  jiraConfig  WorkspaceJiraConfig?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -185,6 +201,7 @@ model TestCase {
   createdBy   User?   @relation("TestCaseCreatedBy", fields: [createdById], references: [id])
 
   testPlanCases TestPlanCase[]
+  caseRuns      CaseRun[]
 
   @@index([featureId])
   @@map("test_cases")
@@ -216,6 +233,7 @@ model TestPlan {
   createdBy   User?     @relation("TestPlanCreatedBy", fields: [createdById], references: [id])
 
   cases TestPlanCase[]
+  runs TestRun[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
@@ -235,4 +253,67 @@ model TestPlanCase {
   @@unique([testPlanId, testCaseId])
   @@index([testPlanId])
   @@map("test_plan_cases")
+}
+
+model TestRun {
+  id          String    @id @default(cuid())
+  status      RunStatus @default(IN_PROGRESS)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  notes       String?
+
+  testPlanId  String
+  testPlan    TestPlan  @relation(fields: [testPlanId], references: [id], onDelete: Cascade)
+  executedById String?
+  executedBy   User?    @relation("ExecutedBy", fields: [executedById], references: [id])
+
+  caseRuns CaseRun[]
+
+  @@index([testPlanId])
+  @@map("test_runs")
+}
+
+model CaseRun {
+  id        String        @id @default(cuid())
+  status    CaseRunStatus @default(PENDING)
+  notes     String?
+  executedAt DateTime?
+
+  testRunId  String
+  testRun    TestRun  @relation(fields: [testRunId], references: [id], onDelete: Cascade)
+  testCaseId String
+  testCase   TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  jiraLinks JiraCaseLink[]
+
+  @@unique([testRunId, testCaseId])
+  @@index([testRunId])
+  @@map("case_runs")
+}
+
+model JiraCaseLink {
+  id         String  @id @default(cuid())
+  ticketKey  String  // ex: "PROJ-123"
+  ticketUrl  String
+  createdAt  DateTime @default(now())
+
+  caseRunId  String
+  caseRun    CaseRun @relation(fields: [caseRunId], references: [id], onDelete: Cascade)
+
+  @@index([caseRunId])
+  @@map("jira_case_links")
+}
+
+model WorkspaceJiraConfig {
+  id           String @id @default(cuid())
+  jiraUrl      String  // ex: "https://empresa.atlassian.net"
+  projectKey   String  // ex: "PROJ"
+  userEmail    String  // email da conta Jira
+  apiToken     String  // token de API (vai encriptar depois)
+  updatedAt    DateTime @updatedAt
+
+  workspaceId  String   @unique
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_jira_configs")
 }
