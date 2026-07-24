@@ -5,7 +5,7 @@ import { requireMembership } from "@/src/lib/authorization";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import slugify from "slugify";
-import type { PlanType } from "@/src/generated/prisma";
+import type { PlanType } from "@/src/generated/prisma/enums";
 
 async function getWorkspaceBySlug(slug: string) {
     return prisma.workspace.findFirst({ where: { slug } });
